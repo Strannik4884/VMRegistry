@@ -30,3 +30,7 @@ services:
     App\Listener\ExceptionListener:
         tags:
             - { name: kernel.event_listener, event: kernel.exception }
+
+    App\EventSubscriber\TokenSubscriber:
+        tags:
+            - { name: kernel.event_subscriber, event: kernel.controller }
