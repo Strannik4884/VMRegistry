@@ -6,14 +6,12 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
  * @ORM\Table(name="`user`")
- * @UniqueEntity(fields={"login"}, message="Аккаунт с указанным логином уже существует")
  */
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -25,9 +23,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=255, unique=true)
+     * @ORM\Column(type="string", length=180, unique=true)
      */
-    private $login;
+    private $email;
 
     /**
      * @ORM\Column(type="json")
@@ -41,44 +39,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private $password;
 
     /**
-     * @ORM\Column(type="string", length=50)
+     * @ORM\OneToMany(targetEntity=VM::class, mappedBy="owner")
      */
-    private $firstName;
-
-    /**
-     * @ORM\Column(type="string", length=50)
-     */
-    private $lastName;
-
-    /**
-     * @ORM\Column(type="string", length=50, nullable=true)
-     */
-    private $patronymic;
-
-    /**
-     * @ORM\Column(type="string", length=15)
-     */
-    private $phone;
-
-    /**
-     * @ORM\OneToOne(targetEntity=Client::class, mappedBy="account", cascade={"persist", "remove"})
-     */
-    private $client;
-
-    /**
-     * @ORM\OneToMany(targetEntity=Checkup::class, mappedBy="doctor")
-     */
-    private $checkups;
-
-    /**
-     * @ORM\OneToMany(targetEntity=Payment::class, mappedBy="registrar")
-     */
-    private $payments;
+    private $vms;
 
     public function __construct()
     {
-        $this->checkups = new ArrayCollection();
-        $this->payments = new ArrayCollection();
+        $this->vms = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -86,14 +53,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->id;
     }
 
-    public function getLogin(): ?string
+    public function getEmail(): ?string
     {
-        return $this->login;
+        return $this->email;
     }
 
-    public function setLogin(string $login): self
+    public function setEmail(string $email): self
     {
-        $this->login = $login;
+        $this->email = $email;
 
         return $this;
     }
@@ -105,7 +72,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getUserIdentifier(): string
     {
-        return (string) $this->login;
+        return (string) $this->email;
     }
 
     /**
@@ -164,147 +131,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getUsername()
     {
-        return $this->lastName . ' ' . $this->firstName;
-    }
-
-    public function getFullName()
-    {
-        return $this->lastName . ' ' . $this->firstName . ' ' . $this->patronymic;
-    }
-
-    public function getFirstName(): ?string
-    {
-        return $this->firstName;
-    }
-
-    public function setFirstName(string $firstName): self
-    {
-        $this->firstName = $firstName;
-
-        return $this;
-    }
-
-    public function getLastName(): ?string
-    {
-        return $this->lastName;
-    }
-
-    public function setLastName(string $lastName): self
-    {
-        $this->lastName = $lastName;
-
-        return $this;
-    }
-
-    public function getPatronymic(): ?string
-    {
-        return $this->patronymic;
-    }
-
-    public function setPatronymic(?string $patronymic): self
-    {
-        $this->patronymic = $patronymic;
-
-        return $this;
-    }
-
-    public function getPhone(): ?string
-    {
-        return $this->phone;
-    }
-
-    public function setPhone(?string $phone): self
-    {
-        $this->phone = $phone;
-
-        return $this;
-    }
-
-    public function getClient(): ?Client
-    {
-        return $this->client;
-    }
-
-    public function setClient(Client $client): self
-    {
-        if ($client->getAccount() !== $this) {
-            $client->setAccount($this);
-        }
-
-        $this->client = $client;
-
-        return $this;
+        return $this->email;
     }
 
     /**
-     * @return Collection|Checkup[]
+     * @return Collection|VM[]
      */
-    public function getCheckups(): Collection
+    public function getVms(): Collection
     {
-        return $this->checkups;
+        return $this->vms;
     }
 
-    public function addCheckup(Checkup $checkup): self
+    public function addVm(VM $vm): self
     {
-        if (!$this->checkups->contains($checkup)) {
-            $this->checkups[] = $checkup;
-            $checkup->setDoctor($this);
+        if (!$this->vms->contains($vm)) {
+            $this->vms[] = $vm;
+            $vm->setOwner($this);
         }
 
         return $this;
     }
 
-    public function getCheckupsSum()
+    public function removeVm(VM $vm): self
     {
-        $sum = 0;
-        foreach ($this->checkups as $checkup) {
-            $sum += $checkup->calculateSum();
-        }
-        return $sum;
-    }
-
-    public function removeCheckup(Checkup $checkup): self
-    {
-        if ($this->checkups->removeElement($checkup)) {
-            if ($checkup->getDoctor() === $this) {
-                $checkup->setDoctor(null);
+        if ($this->vms->removeElement($vm)) {
+            // set the owning side to null (unless already changed)
+            if ($vm->getOwner() === $this) {
+                $vm->setOwner(null);
             }
         }
 
         return $this;
-    }
-
-    /**
-     * @return Collection|Payment[]
-     */
-    public function getPayments(): Collection
-    {
-        return $this->payments;
-    }
-
-    public function addPayment(Payment $payment): self
-    {
-        if (!$this->payments->contains($payment)) {
-            $this->payments[] = $payment;
-            $payment->setRegistrar($this);
-        }
-
-        return $this;
-    }
-
-    public function removePayment(Payment $payment): self
-    {
-        if ($this->payments->removeElement($payment)) {
-            if ($payment->getRegistrar() === $this) {
-                $payment->setRegistrar(null);
-            }
-        }
-
-        return $this;
-    }
-
-    public function __toString()
-    {
-        return $this->login;
     }
 }

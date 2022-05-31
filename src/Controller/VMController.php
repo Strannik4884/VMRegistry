@@ -12,32 +12,6 @@ use Symfony\Component\Routing\Annotation\Route;
 class VMController extends AbstractController
 {
     /**
-     * @Route("/vms/types", name="vms_types", methods={"GET"})
-     */
-    public function getVMsTypes(): Response
-    {
-        return $this->json([
-            'types' => [
-                [
-                    'id' => 1,
-                    'name' => 'Ubuntu',
-                    'image' => 'ubuntu.png'
-                ],
-                [
-                    'id' => 2,
-                    'name' => 'Windows',
-                    'image' => 'windows.png'
-                ],
-                [
-                    'id' => 3,
-                    'name' => 'MacOS',
-                    'image' => 'macos.png'
-                ]
-            ]
-        ]);
-    }
-
-    /**
      * @Route("/vms", name="get_vms", methods={"GET"})
      */
     public function getVMs(): Response
