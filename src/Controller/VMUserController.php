@@ -57,7 +57,7 @@ class VMUserController extends AbstractController implements TokenAuthenticatedC
             ];
         }
 
-        return $this->json(['vm_users' => $response]);
+        return $this->json($response);
     }
 
     /**
